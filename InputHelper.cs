@@ -4,25 +4,65 @@ using UnityEngine;
 
 namespace Eq.GoogleVR
 {
-    public class InputHelper
+    public class TouchPadHelper
     {
-        private GvrLaserPointer mLaserPointer;
-        private LogController mLogger;
+        internal LogController mLogger;
 
-        public InputHelper(LogController logger) : this(logger, "GvrControllerPointer", "Laser")
+        public TouchPadHelper(LogController logger)
         {
-        }
-
-        public InputHelper(LogController logger, string controllerPointerName, string laserName)
-        {
-            GameObject controllerPointerGO = GameObject.Find(controllerPointerName);
-            GameObject laserGO = null;
-
             mLogger = logger;
-            if(mLogger == null)
+            if (mLogger == null)
             {
                 mLogger = new LogController();
             }
+        }
+
+        public TouchStatus TouchStatus
+        {
+            get
+            {
+                TouchStatus status = TouchStatus.None;
+
+                if (GvrController.IsTouching)
+                {
+                    if (GvrController.TouchDown)
+                    {
+                        status = TouchStatus.Down;
+                    }
+                }
+                else
+                {
+                    if (GvrController.TouchUp)
+                    {
+                        status = TouchStatus.Up;
+                    }
+                }
+
+                return status;
+            }
+        }
+
+        public Vector2 TouchPositionOnTouchPad
+        {
+            get
+            {
+                return GvrController.TouchPos;
+            }
+        }
+    }
+
+    public class TouchPadClickHelper : TouchPadHelper
+    {
+        private GvrLaserPointer mLaserPointer;
+
+        public TouchPadClickHelper(LogController logger) : this(logger, "GvrControllerPointer", "Laser")
+        {
+        }
+
+        public TouchPadClickHelper(LogController logger, string controllerPointerName, string laserName) : base(logger)
+        {
+            GameObject controllerPointerGO = GameObject.Find(controllerPointerName);
+            GameObject laserGO = null;
 
             if (controllerPointerGO != null)
             {
@@ -108,6 +148,11 @@ namespace Eq.GoogleVR
     }
 
     public enum ClickStatus
+    {
+        None, Down, Up
+    }
+
+    public enum TouchStatus
     {
         None, Down, Up
     }

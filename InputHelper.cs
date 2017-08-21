@@ -4,11 +4,44 @@ using UnityEngine;
 
 namespace Eq.GoogleVR
 {
-    public class TouchPadHelper
+    public class PointerDeviceHelper
     {
         internal LogController mLogger;
 
-        public TouchPadHelper(LogController logger)
+        public PointerDeviceHelper(LogController logger)
+        {
+            mLogger = logger;
+        }
+
+        public ButtonPushStatus AppButtonStatus 
+        {
+            get
+            {
+                ButtonPushStatus ret = ButtonPushStatus.None;
+
+                if (GvrController.AppButton)
+                {
+                    if (GvrController.AppButtonDown)
+                    {
+                        ret = ButtonPushStatus.Down;
+                    }
+                }
+                else
+                {
+                    if (GvrController.AppButtonUp)
+                    {
+                        ret = ButtonPushStatus.Up;
+                    }
+                }
+
+                return ret;
+            }
+        }
+    }
+
+    public class TouchPadHelper : PointerDeviceHelper
+    {
+        public TouchPadHelper(LogController logger) : base(logger)
         {
             mLogger = logger;
             if (mLogger == null)
@@ -145,6 +178,11 @@ namespace Eq.GoogleVR
                 return mLaserPointer.reticle != null ? mLaserPointer.reticle.transform.position : mLaserPointer.LineEndPoint;
             }
         }
+    }
+
+    public enum ButtonPushStatus
+    {
+        None, Down, Up
     }
 
     public enum ClickStatus

@@ -47,64 +47,11 @@ namespace Eq.GoogleVR
         }
 
         /// <summary>
-        /// check permission
-        /// </summary>
-        /// <param name="targetPermissions">target for check permissions</param>
-        /// <returns>True if it is allowed or not needed to show confirmation dialog, False it it is not alllowed and needed to show confirmation dialog</returns>
-        public bool CheckPermission(Permission targetPermission)
-        {
-            mLogger.CategoryLog(LogController.LogCategoryMethodIn, targetPermission);
-
-            bool ret = CheckPermissionStrictly(targetPermission);
-
-            if (!ret)
-            {
-                GvrPermissionsRequester requester = GvrPermissionsRequester.Instance;
-
-                if (requester != null)
-                {
-                    ret = !requester.ShouldShowRational(targetPermission.Name);
-                }
-
-            }
-
-            mLogger.CategoryLog(LogController.LogCategoryMethodOut, targetPermission + ": " + ret);
-            return ret;
-        }
-
-        /// <summary>
-        /// check permissions
-        /// </summary>
-        /// <param name="targetPermissions">target for check permissions</param>
-        /// <returns>the results for each permission</returns>
-        public bool[] CheckPermission(Permission[] targetPermissions)
-        {
-            mLogger.CategoryLog(LogController.LogCategoryMethodIn, targetPermissions);
-
-            bool[] retArray = CheckPermissionStrictly(targetPermissions);
-            GvrPermissionsRequester requester = GvrPermissionsRequester.Instance;
-
-            if (requester != null)
-            {
-                for (int i = 0, size = retArray.Length; i < size; i++)
-                {
-                    if (!retArray[i])
-                    {
-                        retArray[i] = !requester.ShouldShowRational(targetPermissions[i].Name);
-                    }
-                }
-            }
-
-            mLogger.CategoryLog(LogController.LogCategoryMethodOut, retArray);
-            return retArray;
-        }
-
-        /// <summary>
-        /// check permission strictly(return the result of GvrPermissionsRequester.IsPermissionGranted)
+        /// check permission(return the result of GvrPermissionsRequester.IsPermissionGranted)
         /// </summary>
         /// <param name="targetPermission">target for check permission</param>
         /// <returns>True if it is allowed, False it it is not alllowed</returns>
-        public bool CheckPermissionStrictly(Permission targetPermission)
+        public bool CheckPermission(Permission targetPermission)
         {
             mLogger.CategoryLog(LogController.LogCategoryMethodIn, targetPermission);
 
@@ -121,11 +68,11 @@ namespace Eq.GoogleVR
         }
 
         /// <summary>
-        /// check permissions strictly(return the result of GvrPermissionsRequester.HasPermissionsGranted)
+        /// check permissions(return the result of GvrPermissionsRequester.HasPermissionsGranted)
         /// </summary>
         /// <param name="targetPermissions">target for check permissions</param>
         /// <returns>the results for each permission</returns>
-        public bool[] CheckPermissionStrictly(Permission[] targetPermissions)
+        public bool[] CheckPermission(Permission[] targetPermissions)
         {
             mLogger.CategoryLog(LogController.LogCategoryMethodIn, targetPermissions);
 
@@ -151,13 +98,13 @@ namespace Eq.GoogleVR
 
             if (requester != null)
             {
-                if (requester.ShouldShowRational(targetPermission.Name))
+                if (CheckPermission(targetPermission))
                 {
-                    requester.RequestPermissions(new string[] { targetPermission.Name }, callback);
+                    callback(new GvrPermissionsRequester.PermissionStatus[] { new GvrPermissionsRequester.PermissionStatus(targetPermission.Name, true) });
                 }
                 else
                 {
-                    callback(new GvrPermissionsRequester.PermissionStatus[] { new GvrPermissionsRequester.PermissionStatus(targetPermission.Name, true) });
+                    requester.RequestPermissions(new string[] { targetPermission.Name }, callback);
                 }
             }
             else
@@ -175,12 +122,32 @@ namespace Eq.GoogleVR
 
             if (requester != null)
             {
-                List<string> permissionNameList = new List<string>();
-                foreach (Permission targetPermission in targetPermissions)
+                bool[] tempRetArray = CheckPermission(targetPermissions);
+                bool allGranted = true;
+                foreach(bool tempRet in tempRetArray)
                 {
-                    permissionNameList.Add(targetPermission.Name);
+                    allGranted &= tempRet;
                 }
-                requester.RequestPermissions(permissionNameList.ToArray(), callback);
+
+                if (allGranted)
+                {
+                    GvrPermissionsRequester.PermissionStatus[] permissiontStatusArray = new GvrPermissionsRequester.PermissionStatus[targetPermissions.Length];
+                    for (int i = 0, size = targetPermissions.Length; i < size; i++)
+                    {
+                        permissiontStatusArray[i] = new GvrPermissionsRequester.PermissionStatus(targetPermissions[i].Name, true);
+                    }
+                    callback(permissiontStatusArray);
+                }
+                else
+                {
+                    string[] targetPermissionStrArray = new string[targetPermissions.Length];
+                    for (int i=0, size=targetPermissions.Length; i<size; i++)
+                    {
+                        targetPermissionStrArray[i] = targetPermissions[i].Name;
+                    }
+
+                    requester.RequestPermissions(targetPermissionStrArray, callback);
+                }
             }
             else
             {
@@ -194,6 +161,25 @@ namespace Eq.GoogleVR
             }
 
             mLogger.CategoryLog(LogController.LogCategoryMethodOut, targetPermissions);
+        }
+
+        public bool ShouldShowRational(Permission targetPermission)
+        {
+            mLogger.CategoryLog(LogController.LogCategoryMethodIn, targetPermission);
+            bool ret = false;
+
+            if (!CheckPermission(targetPermission))
+            {
+                GvrPermissionsRequester requester = GvrPermissionsRequester.Instance;
+
+                if (requester != null)
+                {
+                    ret = requester.ShouldShowRational(targetPermission.Name);
+                }
+            }
+
+            mLogger.CategoryLog(LogController.LogCategoryMethodOut, targetPermission + ", " + ret);
+            return ret;
         }
     }
 

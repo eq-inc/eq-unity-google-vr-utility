@@ -6,6 +6,8 @@ namespace Eq.GoogleVR
 {
     public class PointerDeviceHelper
     {
+        internal static readonly string GvrLaserVisualTypeName = "GvrLaserVisual, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+
         internal LogController mLogger;
 
         public PointerDeviceHelper(LogController logger)
@@ -87,6 +89,7 @@ namespace Eq.GoogleVR
     public class TouchPadClickHelper : TouchPadHelper
     {
         private GvrLaserPointer mLaserPointer;
+        private Component mLaserVisual;
 
         public TouchPadClickHelper(LogController logger) : this(logger, "GvrControllerPointer", "Laser")
         {
@@ -105,12 +108,19 @@ namespace Eq.GoogleVR
                     laserGO = laserTF.gameObject;
                     if (laserGO != null)
                     {
-                        mLaserPointer = laserGO.GetComponent<GvrLaserPointer>();
+                        if(Common.GvrSdkVersion >= Common.GoogleVRSDKVersion.v1_100_0)
+                        {
+                            mLaserVisual = laserGO.GetComponent(GvrLaserVisualTypeName);
+                        }
+                        else
+                        {
+                            mLaserPointer = laserGO.GetComponent<GvrLaserPointer>();
+                        }
                     }
                 }
             }
 
-            if (mLaserPointer == null)
+            if ((mLaserPointer == null) && (mLaserVisual == null))
             {
                 throw new ArgumentException("not found GameObject: " + (controllerPointerGO == null ? controllerPointerName : laserName));
             }
@@ -175,7 +185,33 @@ namespace Eq.GoogleVR
         {
             get
             {
-                return mLaserPointer.reticle != null ? mLaserPointer.reticle.transform.position : mLaserPointer.LineEndPoint;
+                if(Common.GvrSdkVersion >= Common.GoogleVRSDKVersion.v1_100_0)
+                {
+                    Type laserVisualType = Type.GetType(GvrLaserVisualTypeName);
+                    GameObject reticle = laserVisualType.GetField("reticle").GetValue(mLaserVisual) as GameObject;
+
+                    if(reticle != null)
+                    {
+                        return reticle.transform.position;
+                    }
+                    else
+                    {
+                        return (Vector3)(laserVisualType.GetProperty("Laser").GetValue(mLaserVisual, null));
+                    }
+                }
+                else
+                {
+                    Type laserPointerType = mLaserPointer.GetType();
+                    GameObject reticle = laserPointerType.GetField("reticle").GetValue(mLaserPointer) as GameObject;
+                    if(reticle != null)
+                    {
+                        return reticle.transform.position;
+                    }
+                    else
+                    {
+                        return (Vector3)(laserPointerType.GetProperty("LineEndPoint").GetValue(mLaserPointer, null));
+                    }
+                }
             }
         }
     }

@@ -23,10 +23,7 @@ namespace Eq.GoogleVR
 
                 if (GvrController.AppButton)
                 {
-                    if (GvrController.AppButtonDown)
-                    {
-                        ret = ButtonPushStatus.Down;
-                    }
+                    ret = ButtonPushStatus.Down;
                 }
                 else
                 {
@@ -37,6 +34,30 @@ namespace Eq.GoogleVR
                 }
 
                 return ret;
+            }
+        }
+
+        public Quaternion DeviceOrientation
+        {
+            get
+            {
+                return GvrController.Orientation;
+            }
+        }
+
+        public Vector3 DeviceOrientationEuler
+        {
+            get
+            {
+                return GvrController.Orientation.eulerAngles;
+            }
+        }
+
+        public Vector3 DeviceAcceleration
+        {
+            get
+            {
+                return GvrController.Accel;
             }
         }
     }

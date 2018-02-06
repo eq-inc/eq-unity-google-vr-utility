@@ -109,6 +109,7 @@ namespace Eq.GoogleVR
 
     public class TouchPadClickHelper : TouchPadHelper
     {
+        private GameObject mControllerPointerGO;
         private GvrLaserPointer mLaserPointer;
         private Component mLaserVisual;
 
@@ -118,20 +119,21 @@ namespace Eq.GoogleVR
 
         public TouchPadClickHelper(LogController logger, string controllerPointerName, string laserName) : base(logger)
         {
-            GameObject controllerPointerGO = GameObject.Find(controllerPointerName);
+            mControllerPointerGO = GameObject.Find(controllerPointerName);
             GameObject laserGO = null;
 
-            if (controllerPointerGO != null)
+            if (mControllerPointerGO != null)
             {
-                Transform laserTF = controllerPointerGO.transform.Find(laserName);
+                Transform laserTF = mControllerPointerGO.transform.Find(laserName);
                 if (laserTF != null)
                 {
                     laserGO = laserTF.gameObject;
                     if (laserGO != null)
                     {
-                        if(Common.GvrSdkVersion >= Common.GoogleVRSDKVersion.v1_100_0)
+                        if (Common.GvrSdkVersion >= Common.GoogleVRSDKVersion.v1_100_0)
                         {
-                            mLaserVisual = laserGO.GetComponent(GvrLaserVisualTypeName);
+                            Type laserVisualType = Type.GetType(GvrLaserVisualTypeName);
+                            mLaserVisual = laserGO.GetComponent(laserVisualType);
                         }
                         else
                         {
@@ -143,7 +145,7 @@ namespace Eq.GoogleVR
 
             if ((mLaserPointer == null) && (mLaserVisual == null))
             {
-                throw new ArgumentException("not found GameObject: " + (controllerPointerGO == null ? controllerPointerName : laserName));
+                throw new ArgumentException("not found GameObject: " + (mControllerPointerGO == null ? controllerPointerName : laserName));
             }
         }
 
@@ -208,17 +210,32 @@ namespace Eq.GoogleVR
             {
                 if(Common.GvrSdkVersion >= Common.GoogleVRSDKVersion.v1_100_0)
                 {
-                    Type laserVisualType = Type.GetType(GvrLaserVisualTypeName);
-                    GameObject reticle = laserVisualType.GetField("reticle").GetValue(mLaserVisual) as GameObject;
+                    Transform laserTF = mControllerPointerGO.transform.Find("Laser").transform;
+                    if(laserTF != null)
+                    {
+                        Transform reticleTF = laserTF.Find("Reticle");
 
-                    if(reticle != null)
-                    {
-                        return reticle.transform.position;
+                        if (reticleTF != null)
+                        {
+                            return reticleTF.position;
+                        }
                     }
-                    else
+
+                    // Reticle game objectが使用できない場合、Re
+                    Vector3 ret = new Vector3();
+                    Type laserVisualType = Type.GetType(GvrLaserVisualTypeName);
+
+                    try
                     {
-                        return (Vector3)(laserVisualType.GetProperty("Laser").GetValue(mLaserVisual, null));
+                        MonoBehaviour reticleMB = (MonoBehaviour)laserVisualType.GetField("reticle").GetValue(mLaserVisual);
+                        ret = reticleMB.transform.position;
                     }
+                    catch (Exception e)
+                    {
+                        mLogger.CategoryLog(LogController.LogCategoryMethodTrace, e);
+                    }
+
+                    return ret;
                 }
                 else
                 {

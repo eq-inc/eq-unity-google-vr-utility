@@ -16,7 +16,9 @@ namespace Eq.GoogleVR
         {
             Init = -1,
             v1_70_0 = 0,
-            v1_100_0
+            v1_100_0,
+            v1_110_0,
+            v1_120_0,
         };
 
         private static GoogleVRSDKVersion _GvrSdkVersion = GoogleVRSDKVersion.Init;

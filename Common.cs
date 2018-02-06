@@ -36,5 +36,29 @@ namespace Eq.GoogleVR
                 }
             }
         }
+
+        public static int LibraryVersionMajorCode
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public static int LibraryVersionMinorCode
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public static int LibraryVersionRevisionCode
+        {
+            get
+            {
+                return 5;
+            }
+        }
     }
 }
